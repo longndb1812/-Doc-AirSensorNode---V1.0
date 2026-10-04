@@ -1,7 +1,8 @@
 # AirSensorNode Firmware - User Guide
 
 ---
-![Uploading image.png…]()
+<img width="448" height="608" alt="image" src="https://github.com/user-attachments/assets/69be941a-d161-4d54-b0d3-89e6d67e9fea" />
+
 
 ## 1. Modbus Register Map
 
