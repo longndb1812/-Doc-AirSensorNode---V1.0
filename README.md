@@ -76,91 +76,150 @@ CRC CRC  CRC16 Modbus
 ```
 
 ---
+# 3. Cấu hình Slave ID
 
-# 3. Slave ID
+Slave ID được cấu hình trực tiếp trên PCB tại 3 vị trí resistor **R1, R2, R3**.
 
-Slave ID được cấu hình trực tiếp trên PCB bằng 3 bit:
+<img width="214" height="149" alt="image" src="https://github.com/user-attachments/assets/66d97964-b132-46fc-b051-3427f45a6200" />
 
-| Bit | Tín hiệu trên PCB | Trọng số |
+## Cách xác định HIGH / LOW
+
+Nhìn board theo đúng chiều của hình minh họa:
+
+| Cách hàn | Trạng thái | Giá trị |
 |---|---|---:|
-| Bit 2 - MSB | `SLAVE_ID_2` | 4 |
-| Bit 1 | `SLAVE_ID_1` | 2 |
-| Bit 0 - LSB | `SLAVE_ID_0` | 1 |
+| Hàn resistor **theo chiều dọc** | HIGH | `1` |
+| Hàn resistor **theo chiều ngang** | LOW | `0` |
+| **Không hàn resistor** | LOW mặc định | `0` |
 
-Khi nhìn trên board, xác định ba vị trí:
+> Các chân Slave ID được cấu hình **GPIO Input + Pull-down**, vì vậy vị trí không hàn resistor sẽ được đọc là `0`.
+
+---
+
+## Mapping R1 / R2 / R3
+
+| PCB | STM32 Pin | Firmware Signal | Bit | Trọng số |
+|---|---|---|---|---:|
+| `R1` | `PB2` | `SLAVE_ID_2` | Bit 2 - MSB | 4 |
+| `R2` | `PB10` | `SLAVE_ID_1` | Bit 1 | 2 |
+| `R3` | `PB11` | `SLAVE_ID_0` | Bit 0 - LSB | 1 |
+
+Slave ID được xác định theo:
 
 ```text
-SLAVE_ID_2     SLAVE_ID_1     SLAVE_ID_0
-    MSB                            LSB
+Slave ID raw = (R1 × 4) + (R2 × 2) + R3
 ```
 
-Mỗi bit có thể được cấu hình bằng resistor strap:
+Trong đó:
 
 ```text
-Kéo lên 3.3V   → 1
-Kéo xuống GND  → 0
-Không hàn      → 0
-```
-
-Các chân không hàn được giữ ở mức `0` bằng pull-down.
-
-Slave ID raw được tính:
-
-```text
-Slave ID raw = (ID_2 × 4) + (ID_1 × 2) + ID_0
+Dọc        = 1
+Ngang      = 0
+Không hàn  = 0
 ```
 
 ---
 
-## 4. Bảng Slave ID
+# 4. Bảng chọn Slave ID
 
-| ID_2 | ID_1 | ID_0 | Slave ID |
-|---:|---:|---:|---:|
-| NC | NC | NC | **1 (Default)** |
-| 0 | 0 | 0 | **1** |
-| 0 | 0 | 1 | **1** |
-| 0 | 1 | 0 | **2** |
-| 0 | 1 | 1 | **3** |
-| 1 | 0 | 0 | **4** |
-| 1 | 0 | 1 | **5** |
-| 1 | 1 | 0 | **6** |
-| 1 | 1 | 1 | **7** |
+Để cấu hình nhanh, chỉ cần nhìn trạng thái **R1 → R2 → R3** và tra bảng:
 
-### Slave ID mặc định
+| Slave ID | R1 | R2 | R3 | Cách hàn R1 → R2 → R3 |
+|---:|:---:|:---:|:---:|---|
+| **1 (Default)** | NC | NC | NC | Không hàn cả 3 |
+| **1** | 0 | 0 | 0 | Ngang - Ngang - Ngang |
+| **1** | 0 | 0 | 1 | Ngang - Ngang - **Dọc** |
+| **2** | 0 | 1 | 0 | Ngang - **Dọc** - Ngang |
+| **3** | 0 | 1 | 1 | Ngang - **Dọc** - **Dọc** |
+| **4** | 1 | 0 | 0 | **Dọc** - Ngang - Ngang |
+| **5** | 1 | 0 | 1 | **Dọc** - Ngang - **Dọc** |
+| **6** | 1 | 1 | 0 | **Dọc** - **Dọc** - Ngang |
+| **7** | 1 | 1 | 1 | **Dọc** - **Dọc** - **Dọc** |
 
-Nếu không hàn bất kỳ resistor cấu hình nào:
+**Quy ước:**
 
 ```text
-ID_2 = 0
-ID_1 = 0
-ID_0 = 0
+1  = HIGH = Hàn dọc
+0  = LOW  = Hàn ngang
+NC = Không hàn = LOW mặc định
+```
+
+---
+
+## Slave ID mặc định
+
+Nếu **không hàn R1, R2 và R3**:
+
+```text
+R1 = 0
+R2 = 0
+R3 = 0
 
 → 000
-→ Slave ID = 1
+→ Slave ID raw = 0
+→ Firmware sử dụng Slave ID = 1
 ```
 
 Firmware **không sử dụng Slave ID 0**.
 
-Nếu đọc được:
+Bất cứ khi nào đọc được:
 
 ```text
-000
+R1 R2 R3 = 000
 ```
 
-firmware tự chuyển:
+firmware sẽ tự chuyển:
 
 ```text
 Slave ID 0 → Slave ID 1
 ```
 
-Do đó Slave ID `1` có hai cấu hình:
+Do đó Slave ID `1` có hai cấu hình bit:
 
 ```text
 000 → ID 1
 001 → ID 1
 ```
 
+và khi không hàn bất kỳ resistor cấu hình nào:
+
+```text
+NC - NC - NC → 000 → ID 1 (Default)
+```
+
 ---
+
+## Ví dụ cấu hình
+
+### Slave ID = 2
+
+```text
+ID = 010
+
+R1 = 0 → Hàn ngang
+R2 = 1 → Hàn dọc
+R3 = 0 → Hàn ngang
+```
+
+### Slave ID = 5
+
+```text
+ID = 101
+
+R1 = 1 → Hàn dọc
+R2 = 0 → Hàn ngang
+R3 = 1 → Hàn dọc
+```
+
+---
+
+## Lưu ý
+
+- Nên **tắt nguồn board** trước khi thay đổi resistor cấu hình Slave ID.
+- Sau khi thay đổi Slave ID, **reset hoặc cấp nguồn lại board** để firmware đọc cấu hình mới.
+- Không cấu hình hai node trên cùng bus RS-485 với cùng Slave ID.
+- Slave ID hợp lệ của firmware hiện tại là **1 đến 7**.
+
 
 ## 5. Lưu ý khi cấu hình Slave ID
 
