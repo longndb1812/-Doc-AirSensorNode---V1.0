@@ -1,8 +1,7 @@
 # AirSensorNode Firmware - User Guide
 
-Tài liệu này dành cho người **sử dụng firmware AirSensorNode** qua giao tiếp **RS-485 / Modbus RTU**.
-
 ---
+![Uploading image.png…]()
 
 ## 1. Modbus Register Map
 
