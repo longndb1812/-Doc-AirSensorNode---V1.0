@@ -34,7 +34,7 @@ Khuyến nghị Gateway đọc cả 6 thanh ghi trong một request.
 Function      : 0x04
 Start Address : 0x0000
 Quantity      : 6
-Baudrate: 9600
+Baudrate      : 9600
 ```
 
 Ví dụ với **Slave ID = 2**:
